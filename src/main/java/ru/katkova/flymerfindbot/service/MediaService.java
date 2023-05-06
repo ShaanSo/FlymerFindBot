@@ -10,7 +10,7 @@ import java.util.List;
 @Service
 public class MediaService {
 
-    public void addImagesToMessage(List<Media> mediaList, List<FlymerMessage> flymerMessageList, String postId) {
+    public void addImagesAndVideosToMessage(List<Media> mediaList, List<FlymerMessage> flymerMessageList, String postId) {
         loop: for (FlymerMessage message: flymerMessageList) {
             String postIdFlymer = "wpt" + message.getUserId().toString() + "_" + message.getVkId().toString();
             if (postIdFlymer.equals(postId)) {

@@ -59,6 +59,19 @@ public class MessageService {
                     .build();
             return partialBotApiMethod;
         }
+        //в сообщении одно видео
+        else if (flymerMessage.getMediaList() != null && flymerMessage.getMediaList().size() == 1
+                && flymerMessage.getMediaList().get(0).getType().equals(MediaType.VIDEO.getType())) {
+            String caption = flymerMessage.trimToShow(textMessage, messageLength);
+            caption = caption + "\n" + String.format("<a href=\"%s\">video</a>",flymerMessage.getMediaList().get(0).getMediaUrl());
+            partialBotApiMethod = SendMessage.builder()
+                    .text(caption)
+                    .chatId(chatId)
+                    .parseMode(parseMode)
+                    .build();
+            return partialBotApiMethod;
+        }
+
         //в сообщении один стикер
         else if (flymerMessage.getMediaList() != null && flymerMessage.getMediaList().size() == 1 && flymerMessage.getMediaList().get(0).getType().equals(MediaType.STICKER.getType())) {
             String caption = flymerMessage.trimToShow(textMessage, messageLength);
@@ -121,6 +134,7 @@ public class MessageService {
                     .build();
             return partialBotApiMethod;
             }
+
         //в сообщении одна гифка + музыка
         else if ((flymerMessage.getMediaList() != null && flymerMessage.getMediaList().size() > 1
                 && flymerMessage.getMediaList().stream().filter(media -> media.getType().equals("gif")).count() == 1)) {
@@ -133,7 +147,7 @@ public class MessageService {
                      url = media.getMediaUrl();
                 }
             }
-            caption = caption + String.format("<a href=\"%s\">gif</a>",url);
+            caption = caption + "\n\n" + String.format("<a href=\"%s\">gif</a>",url);
             caption = flymerMessage.trimToShow(caption, messageLength);
             partialBotApiMethod = SendMessage.builder()
                     .text(caption)
@@ -172,7 +186,7 @@ public class MessageService {
                 caption = caption + "\n\n" + media.getMediaUrl();
             }
         }
-        flymerMessage.trimToShow(caption, captionLength);
+        caption = flymerMessage.trimToShow(caption, captionLength);
         inputMediaList.get(0).setCaption(caption);
         partialBotApiMethod = SendMediaGroup.builder()
                 .medias(inputMediaList)
@@ -204,16 +218,27 @@ public class MessageService {
             List<Media> mediaList = new ArrayList<>();
             String postId = pagePostSizedThumb.parent().id();
             for (Element pageImage: elements) {
-                String imageData = pageImage.toString();
-                String search = "background-image: url(";
-                int i = imageData.indexOf(search) + search.length();
-                String substring = imageData.substring(i);
-                String imageUrl = substring.substring(0, substring.indexOf(")"));
-                imageUrl = imageUrl.replace("&amp;", "&");
-                Media media = fillMediaItem(MediaType.IMAGE, imageUrl, postId);
-                mediaList.add(media);
+                String mediaData = pageImage.toString();
+                String href = "href=\"";
+                int i = mediaData.indexOf(href) + href.length();
+                String hrefSubstring = mediaData.substring(i);
+                if (hrefSubstring.startsWith("/video")) {
+                    String videoUrl = "https://vk.com" + hrefSubstring.substring(0, hrefSubstring.indexOf("\""));
+                    videoUrl = videoUrl.replace("&amp;", "&");
+                    Media media = fillMediaItem(MediaType.VIDEO, videoUrl, postId);
+                    mediaList.add(media);
+                } else
+                {
+                    String search = "background-image: url(";
+                    int j = mediaData.indexOf(search) + search.length();
+                    String substring = mediaData.substring(j);
+                    String imageUrl = substring.substring(0, substring.indexOf(")"));
+                    imageUrl = imageUrl.replace("&amp;", "&");
+                    Media media = fillMediaItem(MediaType.IMAGE, imageUrl, postId);
+                    mediaList.add(media);
+                }
             }
-            mediaService.addImagesToMessage(mediaList, messageList, postId);
+            mediaService.addImagesAndVideosToMessage(mediaList, messageList, postId);
         }
 
         Elements stickers = doc.select(".sticker_img");

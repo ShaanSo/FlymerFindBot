@@ -62,4 +62,12 @@ public class FlymerMessageService extends MessageService{
     public FlymerMessage findMessageByTelegramId(Integer telegramId) {
         return flymerMessageRepository.findFirstByTelegramId(telegramId);
     }
+
+    public FlymerMessage findMessage(Integer vkId, Integer userId) {
+        return flymerMessageRepository.findFirstByVkIdAndUserId(vkId, userId);
+    }
+
+    public FlymerMessage findMessageByAdditionalIds(Integer id) {
+        return flymerMessageRepository.findFirstByAdditionalIdsContains("'"+id+"'");
+    }
 }

@@ -25,7 +25,10 @@ public class User {
     private String userName;
 
     @Column
-    private  boolean isChannel;
+    private  Boolean isChannel;
+
+    @Column
+    Mode mode;
 
     public User(Long chatId, String userName) {
         this.chatId = chatId;

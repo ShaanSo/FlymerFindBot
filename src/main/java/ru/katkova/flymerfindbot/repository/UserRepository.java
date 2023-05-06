@@ -9,4 +9,5 @@ public interface UserRepository extends JpaRepository<User, String> {
 
     User findFirstByChatId(Long chatId);
     void deleteAllByChatId(Long chatId);
+
 }

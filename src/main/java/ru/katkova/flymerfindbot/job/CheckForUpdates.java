@@ -15,7 +15,6 @@ import ru.katkova.flymerfindbot.vkfix.GetCommentsResponseExt;
 import ru.katkova.flymerfindbot.vkfix.VkApiClientExt;
 import ru.katkova.flymerfindbot.vkfix.WidgetCommentExt;
 import java.util.*;
-import java.util.concurrent.Callable;
 
 @EnableScheduling
 @Service
@@ -74,7 +73,6 @@ public class CheckForUpdates {
             flymerMessageList.add(flymerMessage);
         }
 
-        bot.perform(flymerMessageList, false);
         bot.perform(flymerMessageList, true);
         return flymerMessageList;
     }

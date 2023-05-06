@@ -4,6 +4,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import javax.persistence.*;
+import javax.persistence.criteria.CriteriaBuilder;
 import java.util.List;
 import java.util.Objects;
 
@@ -43,6 +44,9 @@ public class Message {
     private String userLogin;
 
     @Column
+    private String additionalIds;
+
+    @Column
     private Integer userId;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval=true, fetch = FetchType.EAGER)
@@ -59,11 +63,11 @@ public class Message {
     public boolean equals(Object o) {
         if (o == this) {
             return true;
-        } else if (!(o instanceof FlymerMessage)) {
+        } else if (!(o instanceof Message)) {
             return false;
         } else {
-            FlymerMessage flymerMessage = (FlymerMessage) o;
-            return Objects.equals(this.vkId, flymerMessage.getVkId());
+            Message flymerMessage = (Message) o;
+            return Objects.equals(this.vkId, flymerMessage.getVkId()) && Objects.equals(this.userId, flymerMessage.getUserId());
         }
     }
 

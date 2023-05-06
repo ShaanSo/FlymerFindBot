@@ -9,5 +9,7 @@ import java.util.List;
 public interface FlymerReplyRepository extends JpaRepository<FlymerReply, String> {
 
     List<FlymerReply> findAll();
+    FlymerReply findFirstByVkIdAndUserId(Integer vkId, Integer userId);
+
 }
 

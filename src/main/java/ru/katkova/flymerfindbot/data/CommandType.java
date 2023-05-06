@@ -5,12 +5,13 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum CommandType {
+public enum CommandType implements UserAction{
+    HELP("/help", "HELP_COMMAND_HANDLER"),
+    MESSAGE("/message", "MESSAGE_COMMAND_HANDLER"),
+    CLEAN("/clean", "CLEAN_COMMAND_HANDLER"),
+    SHOW("/show", "SHOW_COMMAND_HANDLER"),
+    SEND("/send", "SEND_COMMAND_HANDLER");
 
-    CREATE("/create"),
-    SET_TEXT("/text"),
-    SET_IMAGE("/image"),
-    SEND("send");
-
-    public String command;
+    public final String action;
+    private final String handler;
 }

@@ -10,8 +10,8 @@ public interface FlymerMessageRepository extends JpaRepository<FlymerMessage, St
 
     List<FlymerMessage> findAll();
     FlymerMessage findFirstByOrderByDate();
-
     FlymerMessage findFirstByTelegramId(Integer telegramId);
-
+    FlymerMessage findFirstByVkIdAndUserId(Integer vkId, Integer userId);
+    FlymerMessage findFirstByAdditionalIdsContains(String id);
 
 }

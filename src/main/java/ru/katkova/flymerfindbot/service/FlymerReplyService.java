@@ -16,4 +16,12 @@ public class FlymerReplyService extends MessageService {
         return flymerReplyRepository.findAll();
     }
 
+    public void save(FlymerReply flymerReply) {
+        flymerReplyRepository.save(flymerReply);
+    }
+
+    public FlymerReply findMessage(Integer vkId, Integer userId) {
+        return flymerReplyRepository.findFirstByVkIdAndUserId(vkId, userId);
+    }
+
 }

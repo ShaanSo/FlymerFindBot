@@ -11,7 +11,6 @@ import org.springframework.web.client.RestTemplate;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
-import ru.katkova.flymerfindbot.data.User;
 import ru.katkova.flymerfindbot.service.FlymerReplyService;
 import ru.katkova.flymerfindbot.service.MediaService;
 
