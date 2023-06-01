@@ -3,7 +3,6 @@ package ru.katkova.flymerfindbot.data;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import javax.persistence.*;
-import java.util.List;
 
 @Entity
 @Table(name = "FLYMER_MESSAGE")
@@ -14,6 +13,8 @@ import java.util.List;
 @Setter
 @Getter
 public class FlymerMessage extends Message {
+
+    protected static final String seeMore = "... далее на vk.com/wall%s_%s или на flymer.ru";
 
     @Column
     Integer commentsId;

@@ -13,6 +13,8 @@ import javax.persistence.*;
 @Table(name = "FLYMER_REPLY")
 public class FlymerReply extends Message{
 
+    protected static final String seeMore = "... далее на vk.com/wall%s или на flymer.ru";
+
     @ManyToOne
     @JoinColumn(name = "comments_id")
     private FlymerMessage flymerMessage;

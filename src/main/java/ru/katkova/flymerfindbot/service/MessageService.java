@@ -16,8 +16,12 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.media.InputMedia;
 import org.telegram.telegrambots.meta.api.objects.media.InputMediaPhoto;
 import ru.katkova.flymerfindbot.data.FlymerMessage;
+import ru.katkova.flymerfindbot.data.FlymerReply;
 import ru.katkova.flymerfindbot.data.Media;
 import ru.katkova.flymerfindbot.data.MediaType;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -47,66 +51,41 @@ public class MessageService {
 
         String textMessage = fillTextMessage(flymerMessage);
 
-        //в сообщении одна картинка
-        if (flymerMessage.getMediaList() != null && flymerMessage.getMediaList().size() == 1
-                && flymerMessage.getMediaList().get(0).getType().equals(MediaType.IMAGE.getType())) {
-            String caption = flymerMessage.trimToShow(textMessage, captionLength);
-            partialBotApiMethod = SendPhoto.builder()
-                    .photo(new InputFile(flymerMessage.getMediaList().get(0).getMediaUrl()))
-                    .caption(caption)
-                    .chatId(chatId)
-                    .parseMode(parseMode)
-                    .build();
-            return partialBotApiMethod;
-        }
-        //в сообщении одно видео
-        else if (flymerMessage.getMediaList() != null && flymerMessage.getMediaList().size() == 1
-                && flymerMessage.getMediaList().get(0).getType().equals(MediaType.VIDEO.getType())) {
-            String caption = flymerMessage.trimToShow(textMessage, messageLength);
-            caption = caption + "\n" + String.format("<a href=\"%s\">video</a>",flymerMessage.getMediaList().get(0).getMediaUrl());
-            partialBotApiMethod = SendMessage.builder()
-                    .text(caption)
-                    .chatId(chatId)
-                    .parseMode(parseMode)
-                    .build();
-            return partialBotApiMethod;
-        }
-
-        //в сообщении один стикер
-        else if (flymerMessage.getMediaList() != null && flymerMessage.getMediaList().size() == 1 && flymerMessage.getMediaList().get(0).getType().equals(MediaType.STICKER.getType())) {
-            String caption = flymerMessage.trimToShow(textMessage, messageLength);
-            caption = caption + String.format("<a href=\"%s\">sticker</a>",flymerMessage.getMediaList().get(0).getMediaUrl());
-            partialBotApiMethod = SendMessage.builder()
-                    .text(caption)
-                    .chatId(chatId)
-                    .parseMode(parseMode)
-                    .build();
-            return partialBotApiMethod;
-        }
-        //в сообщении одна гифка
-        else if (flymerMessage.getMediaList() != null && flymerMessage.getMediaList().size() == 1 && flymerMessage.getMediaList().get(0).getType().equals(MediaType.GIF.getType())) {
-            String caption = flymerMessage.trimToShow(textMessage, messageLength);
-            caption = caption + String.format("<a href=\"%s\">gif</a>",flymerMessage.getMediaList().get(0).getMediaUrl());
-            partialBotApiMethod = SendMessage.builder()
-                    .text(caption)
-                    .chatId(chatId)
-                    .parseMode(parseMode)
-                    .build();
-            return partialBotApiMethod;
-        }
-        //в сообщении одна картинка + музыка
-        else if (flymerMessage.getMediaList() != null && flymerMessage.getMediaList().size() > 1
-                && flymerMessage.getMediaList().stream().filter(media -> media.getType().equals("image")).count() == 1) {
-            String caption = textMessage;
+        //в сообщении/реплае одна картинка + ссылки и музыка
+        if (flymerMessage.getMediaList() != null &&
+                flymerMessage.getMediaList().stream().filter(a -> a.getType().equals("image")).count() == 1) {
+            String originalUrl = "";
             String url = "";
             for (Media media: flymerMessage.getMediaList()) {
-                if (media.getType().equals("audio")) {
-                    caption = caption + "\n\n" + "<i>" + media.getMediaUrl()+ "</i>";
+                if (media.getType().equals("video")) {
+                    textMessage = textMessage + "\n" + String.format("<a href=\"%s\">video</a>",media.getMediaUrl());
+                } else if (media.getType().equals("sticker")) {
+                    textMessage = textMessage + "\n" + String.format("<a href=\"%s\">sticker</a>", media.getMediaUrl());
+                } else if (media.getType().equals("gif")) {
+                    textMessage = textMessage + "\n" + String.format("<a href=\"%s\">gif</a>",media.getMediaUrl());
+                } else if (media.getType().equals("audio")) {
+                    textMessage = textMessage + "\n\n" + "<i>" + media.getMediaUrl()+ "</i>";
+                } else if (media.getType().equals("original")) {
+                    originalUrl = media.getMediaUrl();
                 } else if (media.getType().equals("image")) {
-                    url = flymerMessage.getMediaList().get(0).getMediaUrl();
+                    url = media.getMediaUrl();
                 }
             }
-            caption = flymerMessage.trimToShow(caption, captionLength);
+
+            if (flymerMessage instanceof FlymerReply) {
+                textMessage = String.format("<a href=\"%s\">picture</a>", url) + "\n" + textMessage;
+                if (!originalUrl.equals("")) {
+                    //проверяем что файл доступен
+                    try {
+                        URL file = new URL(originalUrl);
+                        BufferedImage bufferedImage = ImageIO.read(file);
+                        url = originalUrl;
+                    } catch (Exception e) {
+                        //оставляем url без изменений
+                    }
+                }
+            }
+            String caption = flymerMessage.trimToShow(textMessage, captionLength);
             partialBotApiMethod = SendPhoto.builder()
                     .caption(caption)
                     .photo(new InputFile(url))
@@ -116,56 +95,30 @@ public class MessageService {
             return partialBotApiMethod;
         }
 
-        //в сообщении текст и музыка
-        else if (flymerMessage.getMediaList() != null && flymerMessage.getMediaList().size() > 1
-                && flymerMessage.getMediaList().stream().filter(media -> media.getType().equals("audio")).count() == flymerMessage.getMediaList().size() )
-            {
-            String caption = textMessage;
-            for (Media media: flymerMessage.getMediaList()) {
-                if (media.getType().equals("audio")) {
-                    caption = caption + "\n\n" + "<i>" + media.getMediaUrl()+ "</i>";
+        //в сообщении/реплае нет картинок
+        else {
+            if (flymerMessage.getMediaList() != null) {
+                for (Media media: flymerMessage.getMediaList()) {
+                    if (media.getType().equals("video")) {
+                        textMessage = String.format("<a href=\"%s\">video</a>",media.getMediaUrl()) + "\n" + textMessage;
+                    } else if (media.getType().equals("sticker")) {
+                        textMessage = String.format("<a href=\"%s\">sticker</a>", media.getMediaUrl()) + "\n" + textMessage;
+                    } else if (media.getType().equals("gif")) {
+                        textMessage = String.format("<a href=\"%s\">gif</a>",media.getMediaUrl()) + "\n" + textMessage;
+                    } else if (media.getType().equals("audio")) {
+                        textMessage = textMessage + "\n\n" + "<i>" + media.getMediaUrl()+ "</i>";
+                    }
                 }
-            }
-            caption = flymerMessage.trimToShow(caption, messageLength);
-            partialBotApiMethod = SendMessage.builder()
-                    .text(caption)
-                    .chatId(chatId)
-                    .parseMode(parseMode)
-                    .build();
-            return partialBotApiMethod;
             }
 
-        //в сообщении одна гифка + музыка
-        else if ((flymerMessage.getMediaList() != null && flymerMessage.getMediaList().size() > 1
-                && flymerMessage.getMediaList().stream().filter(media -> media.getType().equals("gif")).count() == 1)) {
-            String caption = textMessage;
-            String url = "";
-            for (Media media: flymerMessage.getMediaList()) {
-                if (media.getType().equals("audio")) {
-                    caption = caption + "\n\n" + "<i>" + media.getMediaUrl()+ "</i>";
-                } if (media.getType().equals("gif")) {
-                     url = media.getMediaUrl();
-                }
-            }
-            caption = caption + "\n\n" + String.format("<a href=\"%s\">gif</a>",url);
-            caption = flymerMessage.trimToShow(caption, messageLength);
-            partialBotApiMethod = SendMessage.builder()
-                    .text(caption)
-                    .chatId(chatId)
-                    .parseMode(parseMode)
-                    .build();
-            return partialBotApiMethod;
-        }
-        //в сообщении только текст
-        else {
             String caption = flymerMessage.trimToShow(textMessage, messageLength);
             partialBotApiMethod = SendMessage.builder()
                     .text(caption)
                     .chatId(chatId)
                     .parseMode(parseMode)
                     .build();
+            return partialBotApiMethod;
         }
-        return partialBotApiMethod;
     }
 
     public PartialBotApiMethod<ArrayList<Message>> mapMediaListToTelegramMessage(ru.katkova.flymerfindbot.data.Message flymerMessage, Long chatId) {
@@ -182,6 +135,12 @@ public class MessageService {
                         .media(media.getMediaUrl())
                         .build();
                 inputMediaList.add(inputMedia);
+            } else if (media.getType().equals("video")) {
+                caption = caption + "\n" + String.format("<a href=\"%s\">video</a>",media.getMediaUrl());
+            } else if (media.getType().equals("sticker")) {
+                caption = caption + "\n" + String.format("<a href=\"%s\">sticker</a>", media.getMediaUrl());
+            } else if (media.getType().equals("gif")) {
+                caption = caption + "\n" + String.format("<a href=\"%s\">gif</a>",media.getMediaUrl());
             } else if (media.getType().equals("audio")) {
                 caption = caption + "\n\n" + media.getMediaUrl();
             }
@@ -229,6 +188,15 @@ public class MessageService {
                     mediaList.add(media);
                 } else
                 {
+                    String original = "Original: ";
+                    if (mediaData.contains(original)) {
+                        int j = mediaData.indexOf(original) + original.length();
+                        String substring = mediaData.substring(j);
+                        String imageUrl = substring.substring(0, substring.indexOf("\""));
+                        imageUrl = imageUrl.replace("&amp;", "&");
+                        Media media = fillMediaItem(MediaType.ORIGINAL, imageUrl, postId);
+                        mediaList.add(media);
+                    }
                     String search = "background-image: url(";
                     int j = mediaData.indexOf(search) + search.length();
                     String substring = mediaData.substring(j);

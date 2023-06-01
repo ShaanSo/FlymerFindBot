@@ -3,6 +3,7 @@ package ru.katkova.flymerfindbot.bot;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -24,6 +25,7 @@ import ru.katkova.flymerfindbot.handler.HandlerManagement;
 import ru.katkova.flymerfindbot.service.FlymerMessageService;
 import ru.katkova.flymerfindbot.service.FlymerReplyService;
 import ru.katkova.flymerfindbot.service.UserService;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -32,7 +34,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
 @Component
 @Slf4j
 public class Bot extends TelegramLongPollingBot {
@@ -42,31 +43,23 @@ public class Bot extends TelegramLongPollingBot {
     @Getter
     @Value("${bot.token}")
     private final String BotToken;
-
     @Autowired
     private UserService userService;
-
     @Autowired
     private FlymerMessageService flymerMessageService;
-
     @Autowired
     private FlymerReplyService flymerReplyService;
 
     @Autowired
     RestTemplate restTemplate;
-
     @Value("${channel.chatId}")
     private Long channelChatId;
-
     @Value("${channel.commentsId}")
     private Long commentsChatId;
-
     @Value("${tg.messageCount}")
     private Long messageCount;
-
     @Value("${tg.minSleep}")
     private Long minSleep;
-
     @Value("${tg.maxSleep}")
     private Long maxSleep;
 
@@ -76,14 +69,6 @@ public class Bot extends TelegramLongPollingBot {
 
     @Autowired
     private HandlerManagement handlerManagement;
-
-    private final String HELP = "Бот предназначен для отправки сообщений в канал FlymerFindChannel.\n" +
-            "Помощь по командам: \n" +
-            "/message - сформировать сообщение в бота\n" +
-            "/show - предпросмотр сообщения\n" +
-            "/clean - очистить сообщение\n" +
-            "/send - отправить сообщение в канал\n" +
-            "/help - помощь по командам";
 
     public Bot(
             TelegramBotsApi telegramBotsApi,
@@ -101,7 +86,6 @@ public class Bot extends TelegramLongPollingBot {
         boolean isCommentChannel = false;
         boolean isChannel = false;
         //вставить проверку, на пустоту пользователя
-
 
         if (update.hasMessage()) {
             chatId = update.getMessage().getChatId();
@@ -122,38 +106,36 @@ public class Bot extends TelegramLongPollingBot {
         }
 
         if (!userService.existsInDB(chatId)) {
-            SendMessage greetings = SendMessage.builder()
-                    .chatId(chatId)
-                    .text(HELP)
-                    .build();
-            Message greetingsMessage = execute(greetings);
-            String userName = greetingsMessage.getChat().getUserName();
-            userService.createNewUser(chatId, userName, isChannel);
+            if (isChannel && isCommentChannel) {
+
+                String help = IOUtils.toString(this.getClass().getResourceAsStream("/description"),
+                    StandardCharsets.UTF_8);
+
+                SendMessage greetings = SendMessage.builder()
+                        .chatId(chatId)
+                        .text(help)
+                        .build();
+                execute(greetings);
+            }
+            String userName = update.getMessage().getChat().getUserName();
+            userService.createNewUser(chatId, userName, isChannel, isCommentChannel);
         }
 
         if (!isChannel && !isCommentChannel) {
-            PartialBotApiMethod<?> method = handlerManagement.manage(user, update);
-            if (method instanceof SendMessage) {
-                SendMessage sendMessage = (SendMessage) method;
-                execute(sendMessage);
-            }
-            else if (method instanceof SendPhoto) {
-                SendPhoto sendPhoto = (SendPhoto) method;
-                GetFile getFile = new GetFile(sendPhoto.getPhoto().getAttachName());
-//                String filePath = execute(getFile).getFilePath();
-//                org.telegram.telegrambots.meta.api.objects.File file = execute(getFile);
-//                String fileUrl = "https://api.telegram.org/file/bot" + getBotToken() + "/"+ filePath;
-                sendPhoto.setPhoto(new InputFile(getFile.getFileId()));
-                execute(sendPhoto);
+            List<PartialBotApiMethod<?>> methodList = handlerManagement.manage(user, update);
+            for (PartialBotApiMethod<?> method: methodList) {
+                if (method instanceof SendMessage) {
+                    SendMessage sendMessage = (SendMessage) method;
+                    execute(sendMessage);
+                }
+                else if (method instanceof SendPhoto) {
+                    SendPhoto sendPhoto = (SendPhoto) method;
+                    GetFile getFile = new GetFile(sendPhoto.getPhoto().getAttachName());
+                    sendPhoto.setPhoto(new InputFile(getFile.getFileId()));
+                    execute(sendPhoto);
+                }
             }
         }
-//        else {
-//            SendMessage help = SendMessage.builder()
-//                    .chatId(chatId)
-//                    .text("В работе.")
-//                    .build();
-//            execute(help);
-//        }
 
         if (isCommentChannel) {
             if (update.getMessage().getSenderChat() != null && update.getMessage().getChat() != null) {
@@ -232,7 +214,6 @@ public class Bot extends TelegramLongPollingBot {
                     }
                         Message telegramMessageSent = execute(sendAnimation);
                         message.setTelegramId(telegramMessageSent.getMessageId());
-
                 }
             } else if (message.getMediaList() != null && message.getMediaList().size() > 1
                     && message.getMediaList().stream().filter(predicateImages).count() > 1) {
@@ -261,6 +242,7 @@ public class Bot extends TelegramLongPollingBot {
 
     public void perform(List<ru.katkova.flymerfindbot.data.FlymerMessage> messageList, boolean addReplies) {
         flymerMessageService.fillMediaContent(messageList);
+
         List<FlymerMessage> sentMessageList = flymerMessageService.findAll();
         List<FlymerReply> sentRepliesList = flymerReplyService.findAll();
         sentMessageList.sort(Comparator.comparing(FlymerMessage::getDate));
@@ -313,7 +295,7 @@ public class Bot extends TelegramLongPollingBot {
 
                     List<FlymerReply> flymerReplyList = message.getFlymerReplyList();
 
-                    if (!flymerReplyList.isEmpty()) {
+                    if (!(flymerReplyList == null || flymerReplyList.isEmpty())) {
                         flymerReplyList.sort(Comparator.comparing(FlymerReply::getDate));
                         Iterator<FlymerReply> replyIterator = flymerReplyList.iterator();
                         while (replyIterator.hasNext()) {

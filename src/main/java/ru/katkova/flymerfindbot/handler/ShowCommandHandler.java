@@ -9,6 +9,8 @@ import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import ru.katkova.flymerfindbot.data.*;
 import ru.katkova.flymerfindbot.service.RawMessageService;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class ShowCommandHandler implements UserActionHandler {
@@ -17,15 +19,17 @@ public class ShowCommandHandler implements UserActionHandler {
     RawMessageService rawMessageService;
 
     @Override
-    public PartialBotApiMethod<?> handle(User user, Update update){
+    public List<PartialBotApiMethod<?>> handle(User user, Update update){
 
         RawMessage rawMessage = rawMessageService.findByChatId(user.getChatId());
+        List<PartialBotApiMethod<?>> sendMessageList = new ArrayList<>();
         if (rawMessage == null) {
             SendMessage sendMessage = SendMessage.builder()
                     .text("Сообщение отсутствует в базе")
                     .chatId(user.getChatId())
                     .build();
-            return sendMessage;
+            sendMessageList.add(sendMessage);
+            return sendMessageList;
         } else {
             if (!rawMessage.getMediaList().isEmpty()) {
                 SendPhoto sendPhoto = SendPhoto.builder()
@@ -34,14 +38,16 @@ public class ShowCommandHandler implements UserActionHandler {
                         .chatId(user.getChatId())
                         .parseMode("html")
                         .build();
-                return sendPhoto;
+                sendMessageList.add(sendPhoto);
+                return sendMessageList;
             } else {
                 SendMessage sendMessage = SendMessage.builder()
                             .text(rawMessage.getMessage())
                             .chatId(user.getChatId())
                             .parseMode("html")
                             .build();
-                return sendMessage;
+                sendMessageList.add(sendMessage);
+                return sendMessageList;
             }
         }
     }

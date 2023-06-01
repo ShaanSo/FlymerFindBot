@@ -28,6 +28,9 @@ public class User {
     private  Boolean isChannel;
 
     @Column
+    private  Boolean isCommentsChat;
+
+    @Column
     Mode mode;
 
     public User(Long chatId, String userName) {

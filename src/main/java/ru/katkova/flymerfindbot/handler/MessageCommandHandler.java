@@ -10,6 +10,8 @@ import ru.katkova.flymerfindbot.data.Mode;
 import ru.katkova.flymerfindbot.data.User;
 import ru.katkova.flymerfindbot.data.UserAction;
 import ru.katkova.flymerfindbot.service.UserService;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class MessageCommandHandler implements UserActionHandler {
@@ -22,13 +24,15 @@ public class MessageCommandHandler implements UserActionHandler {
     UserService userService;
 
     @Override
-    public PartialBotApiMethod<?> handle(User user, Update update) {
+    public List<PartialBotApiMethod<?>> handle(User user, Update update) {
+        List<PartialBotApiMethod<?>> sendMessageList = new ArrayList<>();
         userService.changeMode(user, Mode.SET_MESSAGE);
         SendMessage sendMessage = SendMessage.builder()
                 .chatId(user.getChatId())
                 .text(MESSAGE_HELP)
                 .build();
-        return sendMessage;
+        sendMessageList.add(sendMessage);
+        return sendMessageList;
     }
 
     @Override

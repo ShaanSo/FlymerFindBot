@@ -7,11 +7,9 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum MediaType {
     IMAGE("image"),
-
+    ORIGINAL("original"),
     VIDEO("video"),
-
     AUDIO("audio"),
-
     GIF("gif"),
     STICKER("sticker");
 

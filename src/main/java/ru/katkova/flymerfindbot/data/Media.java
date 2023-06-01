@@ -17,7 +17,7 @@ public class Media {
     @GeneratedValue()
     private Integer id;
 
-    @Column
+    @Column(columnDefinition="text")
     private String mediaUrl;
 
     @Column

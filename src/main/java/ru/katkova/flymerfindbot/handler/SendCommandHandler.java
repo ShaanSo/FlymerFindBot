@@ -11,6 +11,8 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import ru.katkova.flymerfindbot.data.*;
 import ru.katkova.flymerfindbot.service.RawMessageService;
 import ru.katkova.flymerfindbot.service.UserService;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class SendCommandHandler implements UserActionHandler{
@@ -27,14 +29,16 @@ public class SendCommandHandler implements UserActionHandler{
     private Long channelChatId;
 
     @Override
-    public PartialBotApiMethod<?> handle(User user, Update update) {
+    public List<PartialBotApiMethod<?>> handle(User user, Update update) {
         RawMessage rawMessage = rawMessageService.findByChatId(user.getChatId());
+        List<PartialBotApiMethod<?>> sendMessageList = new ArrayList<>();
         if (rawMessage == null) {
             SendMessage sendMessage = SendMessage.builder()
                     .text("Сообщение отсутствует в базе")
                     .chatId(user.getChatId())
                     .build();
-            return sendMessage;
+            sendMessageList.add(sendMessage);
+            return sendMessageList;
         } else {
             if (rawMessage.getMediaList() != null &&
                     !rawMessage.getMediaList().isEmpty() &&
@@ -45,18 +49,28 @@ public class SendCommandHandler implements UserActionHandler{
                         .caption(header + "\n" + rawMessage.getMessage())
                         .parseMode("html")
                         .build();
+                sendMessageList.add(sendPhoto);
                 userService.changeMode(user, Mode.NONE);
                 rawMessageService.delete(rawMessage);
-                return sendPhoto;
+                return sendMessageList;
             } else {
-                SendMessage sendMessage = SendMessage.builder()
+                SendMessage sendMessageChannel = SendMessage.builder()
                             .chatId(channelChatId)
                             .text(header + "\n" + rawMessage.getMessage())
                             .parseMode("html")
                             .build();
                     userService.changeMode(user, Mode.NONE);
                     rawMessageService.delete(rawMessage);
-                return sendMessage;
+                sendMessageList.add(sendMessageChannel);
+                SendMessage sendMessageBot = SendMessage.builder()
+                    .chatId(user.getChatId())
+                    .text("Сообщение было отправлено в канал")
+                    .parseMode("html")
+                    .build();
+                sendMessageList.add(sendMessageBot);
+                userService.changeMode(user, Mode.NONE);
+                rawMessageService.delete(rawMessage);
+                return sendMessageList;
             }
         }
     }

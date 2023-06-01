@@ -15,9 +15,9 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
-    public void createNewUser(Long chatId, String userName, Boolean isChannel) {
+    public void createNewUser(Long chatId, String userName, Boolean isChannel, Boolean isCommentsChat) {
         log.info("User with chat id " + chatId + " was created in DB");
-        User user = new User(chatId, userName, isChannel, Mode.NONE);
+        User user = new User(chatId, userName, isChannel, isCommentsChat, Mode.NONE);
         userRepository.save(user);
     }
 
@@ -27,7 +27,6 @@ public class UserService {
     public User findInDB(Long chatId) {
         return userRepository.findFirstByChatId(chatId);
     }
-
 
     @Transactional
     public void deleteUser(Long chatId) {

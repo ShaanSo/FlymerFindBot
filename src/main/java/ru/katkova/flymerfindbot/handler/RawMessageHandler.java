@@ -17,11 +17,12 @@ public class RawMessageHandler implements UserActionHandler {
     RawMessageService rawMessageService;
 
     @Override
-    public PartialBotApiMethod<?> handle(User user, Update update){
+    public List<PartialBotApiMethod<?>> handle(User user, Update update){
 
         String header = "<b>Автор: </b> FlymerFindBot\n" +
                 "<b>Сообщение: </b>\n";
 
+        List<PartialBotApiMethod<?>> sendMessageList = new ArrayList<>();
         RawMessage rawMessagefromBD = rawMessageService.findByChatId(user.getChatId());
         RawMessage rawMessage;
         if (rawMessagefromBD == null) {
@@ -41,7 +42,6 @@ public class RawMessageHandler implements UserActionHandler {
             rawMessage.setMediaList(mediaList);
         } else {
             text = header + (update.getMessage().getText() != null ? update.getMessage().getText() : "");
-//            rawMessage.getMediaList().clear();
             rawMessage.setChatId(user.getChatId());
             rawMessage.setMessage(text);
 
@@ -58,7 +58,8 @@ public class RawMessageHandler implements UserActionHandler {
                     .chatId(user.getChatId())
                     .build();
         }
-        return sendMessage;
+        sendMessageList.add(sendMessage);
+        return sendMessageList;
     }
 
     @Override

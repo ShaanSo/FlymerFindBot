@@ -2,9 +2,7 @@ package ru.katkova.flymerfindbot.data;
 
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
 import javax.persistence.*;
-import javax.persistence.criteria.CriteriaBuilder;
 import java.util.List;
 import java.util.Objects;
 
@@ -17,8 +15,6 @@ import java.util.Objects;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Message {
-
-    protected static final String seeMore = "... далее на vk.com/wall%s или на flymer.ru";
 
     @Id
     @Column

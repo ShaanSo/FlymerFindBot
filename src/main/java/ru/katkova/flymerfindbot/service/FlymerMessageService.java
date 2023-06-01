@@ -34,21 +34,24 @@ public class FlymerMessageService extends MessageService{
 
         List<FlymerReply> flymerReplyList = new ArrayList<>();
         CommentReplies commentReplies = widgetMessage.getComments();
-        List<CommentRepliesItem> commentRepliesItemList = commentReplies.getReplies();
-        for (CommentRepliesItem commentRepliesItem: commentRepliesItemList) {
-            String replyLogin = commentRepliesItem.getUser().getFirstName() + " " + commentRepliesItem.getUser().getLastName();
-            Integer replyUserId = commentRepliesItem.getUser().getId();
-            FlymerReply flymerReply = FlymerReply.builder()
-                    .vkId(commentRepliesItem.getCid())
-                    .date(commentRepliesItem.getDate())
-                    .message(commentRepliesItem.getText())
-                    .userLogin(replyLogin)
-                    .userId(replyUserId)
-                    .vkPostId(userId.toString() + "_" + widgetMessage.getId().toString())
-                    .build();
-            flymerReplyList.add(flymerReply);
+        if (commentReplies != null) {
+            List<CommentRepliesItem> commentRepliesItemList = commentReplies.getReplies();
+            for (CommentRepliesItem commentRepliesItem: commentRepliesItemList) {
+                String replyLogin = commentRepliesItem.getUser().getFirstName() + " " + commentRepliesItem.getUser().getLastName();
+                Integer replyUserId = commentRepliesItem.getUser().getId();
+                FlymerReply flymerReply = FlymerReply.builder()
+                        .vkId(commentRepliesItem.getCid())
+                        .date(commentRepliesItem.getDate())
+                        .message(commentRepliesItem.getText())
+                        .userLogin(replyLogin)
+                        .userId(replyUserId)
+                        .vkPostId(userId.toString() + "_" + widgetMessage.getId().toString())
+                        .build();
+                flymerReplyList.add(flymerReply);
+            }
+            flymerMessage.setFlymerReplyList(flymerReplyList);
         }
-        flymerMessage.setFlymerReplyList(flymerReplyList);
+
         return flymerMessage;
     }
 

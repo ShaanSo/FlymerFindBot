@@ -19,7 +19,6 @@ import ru.katkova.flymerfindbot.service.MediaService;
 @Configuration
 public class ApplicationConfiguration {
 
-
     @Bean
     TelegramBotsApi telegramBotsApi() throws TelegramApiException {
         return new TelegramBotsApi(DefaultBotSession.class);
